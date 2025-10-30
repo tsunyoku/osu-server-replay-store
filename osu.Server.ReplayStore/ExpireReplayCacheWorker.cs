@@ -58,7 +58,7 @@ namespace osu.Server.ReplayStore
             yield return AppSettings.ReplayCacheStoragePath;
 
             foreach (string ruleset in new[] { "osu", "taiko", "catch", "mania" })
-                yield return string.Format(AppSettings.LegacyReplayCacheStoragePath, ruleset);
+                yield return Path.Join(AppSettings.LegacyReplayCacheStoragePath, ruleset);
         }
     }
 }

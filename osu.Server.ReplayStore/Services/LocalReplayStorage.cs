@@ -49,7 +49,7 @@ namespace osu.Server.ReplayStore.Services
 
         private string getReplayDirectory(ushort rulesetId, bool legacyScore) =>
             legacyScore
-                ? string.Format(legacyBaseDirectory, LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId))
+                ? Path.Combine(legacyBaseDirectory, LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId))
                 : baseDirectory;
 
         private string getPathToReplay(long scoreId, ushort rulesetId, bool legacyScore) =>

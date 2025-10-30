@@ -28,7 +28,7 @@ namespace osu.Server.ReplayStore.Services
         public async Task<byte[]?> FindReplayDataAsync(long scoreId, ushort rulesetId, bool legacyScore)
         {
             string baseCacheDirectory = legacyScore
-                ? string.Format(legacyBaseDirectory, LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId))
+                ? Path.Join(legacyBaseDirectory, LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId))
                 : baseDirectory;
 
             foreach (string cacheDirectory in Directory.EnumerateDirectories(baseCacheDirectory))
@@ -45,7 +45,7 @@ namespace osu.Server.ReplayStore.Services
         public Task RemoveAsync(long scoreId, ushort rulesetId, bool legacyScore)
         {
             string baseCacheDirectory = legacyScore
-                ? string.Format(legacyBaseDirectory, LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId))
+                ? Path.Join(legacyBaseDirectory, LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId))
                 : baseDirectory;
 
             foreach (string cacheDirectory in Directory.EnumerateDirectories(baseCacheDirectory))
@@ -67,7 +67,7 @@ namespace osu.Server.ReplayStore.Services
             string date = DateTime.Today.ToString("ddMMyy");
 
             string baseCacheDirectory = legacyScore
-                ? string.Format(legacyBaseDirectory, LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId))
+                ? Path.Join(legacyBaseDirectory, LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId))
                 : baseDirectory;
 
             string datedDirectory = Path.Combine(baseCacheDirectory, date);
