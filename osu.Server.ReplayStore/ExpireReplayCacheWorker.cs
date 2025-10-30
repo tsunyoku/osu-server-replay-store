@@ -18,8 +18,18 @@ namespace osu.Server.ReplayStore
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                removeExpiredDirectories();
-                await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+                try
+                {
+                    removeExpiredDirectories();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to remove expired replay directories");
+                }
+                finally
+                {
+                    await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+                }
             }
         }
 
