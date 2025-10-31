@@ -10,16 +10,40 @@ namespace osu.Server.ReplayStore.Services
     /// <summary>
     /// Caches replays to local storage based on score type (legacy, solo) and current date.
     ///
-    /// The top level of this cache are the <see cref="AppSettings.ReplayCacheStoragePath"/> and <see cref="AppSettings.LegacyReplayCacheStoragePath"/> folders.
-    /// In the case of the legacy cache folder, replays must be split by ruleset so there is another hierarchy level inside with a folder per ruleset
-    /// The cache is divided up by folders of each date. When a replay is added to the cache, it will be put into a folder with the date it was added.
+    /// The top-level directories of this cache are the <see cref="AppSettings.ReplayCacheStoragePath"/> and <see cref="AppSettings.LegacyReplayCacheStoragePath"/> folders.
+    /// The first stores lazer replays, the second stores stable replays.
+    /// In the case of the legacy cache folder, replays must be split by ruleset, because stable scores have separate ID schemes per ruleset,
+    /// so there is another hierarchy level inside with a folder per ruleset.
+    /// At the lowest level, the cache is divided up by folders of each date.
+    /// When a replay is added to the cache, it will be put into a folder named by the date it was added in <c>ddMMyy</c> format.
     /// <see cref="ExpireReplayCacheWorker"/> is a worker that will purge these folders as they get too old, depending on <see cref="AppSettings.ReplayCacheDays"/>.
-    ///
-    /// Examples:
-    ///
-    /// - A solo score with score ID 1 that was cached on 30/10/25 would be stored in {ReplayCacheStoragePath}/301025/1.
-    /// - A legacy score with score ID 1 for the osu ruleset that was cached on 30/10/25 would be stored in {LegacyReplayCacheStoragePath}/osu/301025/1.
     /// </summary>
+    /// <example>
+    /// <code>
+    /// $(AppSettings.ReplayCacheStoragePath)
+    /// ├─ 301025
+    /// ├─ 311025
+    /// └─ 011125
+    ///  
+    /// $(AppSettings.LegacyReplayCacheStoragePath)
+    /// ├─ osu
+    /// │  ├─ 301025
+    /// │  ├─ 311025
+    /// │  └─ 011125
+    /// ├─ taiko
+    /// │  ├─ 301025
+    /// │  ├─ 311025
+    /// │  └─ 011125
+    /// ├─ catch
+    /// │  ├─ 301025
+    /// │  ├─ 311025
+    /// │  └─ 011125
+    /// └─ mania
+    ///    ├─ 301025
+    ///    ├─ 311025
+    ///    └─ 011125
+    /// </code>
+    /// </example>
     public class FileReplayCache : IReplayCache
     {
         private readonly string baseDirectory;
