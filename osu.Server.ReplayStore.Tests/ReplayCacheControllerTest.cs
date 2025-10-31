@@ -80,6 +80,12 @@ namespace osu.Server.ReplayStore.Tests
             Assert.NotNull(cachedReplay);
             Assert.True(cachedReplay.Length > 0);
             Assert.Equal(replayBytes, cachedReplay);
+
+            using var storedReplayStream = await replayStorage.GetReplayStreamAsync(scoreId: 1, rulesetId: 0, legacyScore: false);
+            byte[] storedReplay = await storedReplayStream.ReadAllRemainingBytesToArrayAsync();
+            Assert.NotNull(storedReplay);
+            Assert.True(storedReplay.Length > 0);
+            Assert.Equal(replayBytes, storedReplay);
         }
 
         [Fact]
@@ -123,7 +129,7 @@ namespace osu.Server.ReplayStore.Tests
             var form = new MultipartFormDataContent();
             form.Add(new ByteArrayContent(replayBytes), "replayFile", legacy_replay_filename);
 
-            var finalReplay = LegacyReplayHelper.WriteReplayWithHeader(
+            var replayWithHeader = LegacyReplayHelper.WriteReplayWithHeader(
                 replayBytes,
                 rulesetId: 0,
                 scoreVersion: null,
@@ -145,7 +151,7 @@ namespace osu.Server.ReplayStore.Tests
                     checksum = "5d370b1b0483f4fc7c64bff0ade06c0f",
                 });
 
-            byte[] finalReplayBytes = await finalReplay.ReadAllRemainingBytesToArrayAsync();
+            byte[] replayWithHeaderBytes = await replayWithHeader.ReadAllRemainingBytesToArrayAsync();
 
             var response = await Client.PutAsync("/replays/0/1", form);
             Assert.True(response.IsSuccessStatusCode);
@@ -153,7 +159,13 @@ namespace osu.Server.ReplayStore.Tests
             byte[]? cachedReplay = await replayCache.FindReplayDataAsync(scoreId: 1, rulesetId: 0, legacyScore: true);
             Assert.NotNull(cachedReplay);
             Assert.True(cachedReplay.Length > 0);
-            Assert.Equal(finalReplayBytes, cachedReplay);
+            Assert.Equal(replayWithHeaderBytes, cachedReplay);
+
+            using var storedReplayStream = await replayStorage.GetReplayStreamAsync(scoreId: 1, rulesetId: 0, legacyScore: true);
+            byte[] storedReplay = await storedReplayStream.ReadAllRemainingBytesToArrayAsync();
+            Assert.NotNull(storedReplay);
+            Assert.True(storedReplay.Length > 0);
+            Assert.Equal(replayBytes, storedReplay);
         }
 
         [Fact]
