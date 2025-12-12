@@ -20,7 +20,8 @@ namespace osu.Server.ReplayStore
             {
                 try
                 {
-                    removeExpiredDirectories();
+                    removeExpiredDirectories(AppSettings.ReplayCacheStoragePath);
+                    removeExpiredDirectories(AppSettings.LegacyReplayCacheStoragePath);
                 }
                 catch (Exception ex)
                 {
@@ -33,32 +34,21 @@ namespace osu.Server.ReplayStore
             }
         }
 
-        private void removeExpiredDirectories()
+        private void removeExpiredDirectories(string baseDirectory)
         {
-            foreach (string replayFolder in getCacheFolders())
+            foreach (string cacheFolder in Directory.EnumerateDirectories(baseDirectory))
             {
-                foreach (string cacheFolder in Directory.EnumerateDirectories(replayFolder))
-                {
-                    string cacheDate = Path.GetFileName(cacheFolder);
+                string cacheDate = Path.GetFileName(cacheFolder);
 
-                    if ((DateTime.Today - getDateFromString(cacheDate)).TotalDays <= AppSettings.ReplayCacheDays)
-                        continue;
+                if ((DateTime.Today - getDateFromString(cacheDate)).TotalDays <= AppSettings.ReplayCacheDays)
+                    continue;
 
-                    Directory.Delete(cacheFolder, true);
-                    logger.LogInformation("Deleted expired cache folder {CacheFolder}", cacheFolder);
-                }
+                Directory.Delete(cacheFolder, true);
+                logger.LogInformation("Deleted expired cache folder {CacheFolder}", cacheFolder);
             }
         }
 
         private static DateTime getDateFromString(string date)
             => DateTime.ParseExact(date, "yyyyMMdd", null).Date;
-
-        private static IEnumerable<string> getCacheFolders()
-        {
-            yield return AppSettings.ReplayCacheStoragePath;
-
-            foreach (string ruleset in new[] { "osu", "taiko", "catch", "mania" })
-                yield return Path.Join(AppSettings.LegacyReplayCacheStoragePath, ruleset);
-        }
     }
 }

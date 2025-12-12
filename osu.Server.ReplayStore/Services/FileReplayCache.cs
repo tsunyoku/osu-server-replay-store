@@ -14,7 +14,6 @@ namespace osu.Server.ReplayStore.Services
     /// The first stores lazer replays, the second stores stable replays.
     /// In the case of the legacy cache folder, replays must be split by ruleset, because stable scores have separate ID schemes per ruleset,
     /// so there is another hierarchy level inside with a folder per ruleset.
-    /// At the lowest level, the cache is divided up by folders of each date.
     /// When a replay is added to the cache, it will be put into a folder named by the date it was added in <c>yyyyMMdd</c> format.
     /// <see cref="ExpireReplayCacheWorker"/> is a worker that will purge these folders as they get too old, depending on <see cref="AppSettings.ReplayCacheDays"/>.
     /// </summary>
@@ -26,22 +25,21 @@ namespace osu.Server.ReplayStore.Services
     /// └─ 20251210
     ///  
     /// $(AppSettings.LegacyReplayCacheStoragePath)
-    /// ├─ osu
-    /// │  ├─ 20251212
-    /// │  ├─ 20251211
-    /// │  └─ 20251210
-    /// ├─ taiko
-    /// │  ├─ 20251212
-    /// │  ├─ 20251211
-    /// │  └─ 20251210
-    /// ├─ catch
-    /// │  ├─ 20251212
-    /// │  ├─ 20251211
-    /// │  └─ 20251210
-    /// └─ mania
-    /// │  ├─ 20251212
-    /// │  ├─ 20251211
-    /// │  └─ 20251210
+    /// ├─ 20251212
+    /// │  ├─ osu
+    /// │  ├─ taiko
+    /// │  ├─ catch
+    /// │  └─ mania
+    /// ├─ 20251211
+    /// │  ├─ osu
+    /// │  ├─ taiko
+    /// │  ├─ catch
+    /// │  └─ mania
+    /// ├─ 20251210
+    /// │  ├─ osu
+    /// │  ├─ taiko
+    /// │  ├─ catch
+    /// │  └─ mania
     /// </code>
     /// </example>
     public class FileReplayCache : IReplayCache
@@ -65,12 +63,16 @@ namespace osu.Server.ReplayStore.Services
         public async Task<byte[]?> FindReplayDataAsync(long scoreId, ushort rulesetId, bool legacyScore)
         {
             string baseCacheDirectory = legacyScore
-                ? Path.Join(legacyBaseDirectory, LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId))
+                ? legacyBaseDirectory
                 : baseDirectory;
 
             foreach (string cacheDirectory in Directory.EnumerateDirectories(baseCacheDirectory))
             {
-                string replayPath = Path.Combine(cacheDirectory, scoreId.ToString(CultureInfo.InvariantCulture));
+                string directory = legacyScore
+                    ? Path.Combine(cacheDirectory, LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId))
+                    : cacheDirectory;
+
+                string replayPath = Path.Combine(directory, scoreId.ToString(CultureInfo.InvariantCulture));
 
                 if (File.Exists(replayPath))
                     return await File.ReadAllBytesAsync(replayPath);
@@ -82,12 +84,16 @@ namespace osu.Server.ReplayStore.Services
         public Task RemoveAsync(long scoreId, ushort rulesetId, bool legacyScore)
         {
             string baseCacheDirectory = legacyScore
-                ? Path.Join(legacyBaseDirectory, LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId))
+                ? legacyBaseDirectory
                 : baseDirectory;
 
             foreach (string cacheDirectory in Directory.EnumerateDirectories(baseCacheDirectory))
             {
-                string replayPath = Path.Combine(cacheDirectory, scoreId.ToString(CultureInfo.InvariantCulture));
+                string directory = legacyScore
+                    ? Path.Combine(cacheDirectory, LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId))
+                    : cacheDirectory;
+
+                string replayPath = Path.Combine(directory, scoreId.ToString(CultureInfo.InvariantCulture));
 
                 if (File.Exists(replayPath))
                 {
@@ -101,18 +107,25 @@ namespace osu.Server.ReplayStore.Services
 
         private string getReplayDirectory(ushort rulesetId, bool legacyScore)
         {
-            string date = DateTime.Today.ToString("yyyyMMdd");
-
             string baseCacheDirectory = legacyScore
-                ? Path.Join(legacyBaseDirectory, LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId))
+                ? legacyBaseDirectory
                 : baseDirectory;
+
+            string date = DateTime.Today.ToString("yyyyMMdd");
 
             string datedDirectory = Path.Combine(baseCacheDirectory, date);
 
             if (!Directory.Exists(datedDirectory))
                 Directory.CreateDirectory(datedDirectory);
 
-            return datedDirectory;
+            string replayDirectory = legacyScore
+                ? Path.Combine(datedDirectory, LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId))
+                : datedDirectory;
+
+            if (!Directory.Exists(replayDirectory))
+                Directory.CreateDirectory(replayDirectory);
+
+            return replayDirectory;
         }
 
         private string getPathToReplay(long scoreId, ushort rulesetId, bool legacyScore) =>

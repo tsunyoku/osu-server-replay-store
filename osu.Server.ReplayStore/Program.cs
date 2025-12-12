@@ -126,10 +126,6 @@ namespace osu.Server.ReplayStore
             if (builder.Environment.EnvironmentName != INTEGRATION_TEST_ENVIRONMENT)
             {
                 builder.Services.AddTransient<IReplayCache, FileReplayCache>();
-
-                foreach (string ruleset in new[] { "osu", "taiko", "catch", "mania" })
-                    Directory.CreateDirectory(Path.Combine(AppSettings.LegacyReplayCacheStoragePath, ruleset));
-
                 builder.Services.AddHostedService<ExpireReplayCacheWorker>();
             }
 
