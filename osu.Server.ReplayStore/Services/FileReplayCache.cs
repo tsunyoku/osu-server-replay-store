@@ -15,33 +15,33 @@ namespace osu.Server.ReplayStore.Services
     /// In the case of the legacy cache folder, replays must be split by ruleset, because stable scores have separate ID schemes per ruleset,
     /// so there is another hierarchy level inside with a folder per ruleset.
     /// At the lowest level, the cache is divided up by folders of each date.
-    /// When a replay is added to the cache, it will be put into a folder named by the date it was added in <c>ddMMyy</c> format.
+    /// When a replay is added to the cache, it will be put into a folder named by the date it was added in <c>yyyyMMdd</c> format.
     /// <see cref="ExpireReplayCacheWorker"/> is a worker that will purge these folders as they get too old, depending on <see cref="AppSettings.ReplayCacheDays"/>.
     /// </summary>
     /// <example>
     /// <code>
     /// $(AppSettings.ReplayCacheStoragePath)
-    /// ├─ 301025
-    /// ├─ 311025
-    /// └─ 011125
+    /// ├─ 20251212
+    /// ├─ 20251211
+    /// └─ 20251210
     ///  
     /// $(AppSettings.LegacyReplayCacheStoragePath)
     /// ├─ osu
-    /// │  ├─ 301025
-    /// │  ├─ 311025
-    /// │  └─ 011125
+    /// │  ├─ 20251212
+    /// │  ├─ 20251211
+    /// │  └─ 20251210
     /// ├─ taiko
-    /// │  ├─ 301025
-    /// │  ├─ 311025
-    /// │  └─ 011125
+    /// │  ├─ 20251212
+    /// │  ├─ 20251211
+    /// │  └─ 20251210
     /// ├─ catch
-    /// │  ├─ 301025
-    /// │  ├─ 311025
-    /// │  └─ 011125
+    /// │  ├─ 20251212
+    /// │  ├─ 20251211
+    /// │  └─ 20251210
     /// └─ mania
-    ///    ├─ 301025
-    ///    ├─ 311025
-    ///    └─ 011125
+    /// │  ├─ 20251212
+    /// │  ├─ 20251211
+    /// │  └─ 20251210
     /// </code>
     /// </example>
     public class FileReplayCache : IReplayCache
@@ -101,7 +101,7 @@ namespace osu.Server.ReplayStore.Services
 
         private string getReplayDirectory(ushort rulesetId, bool legacyScore)
         {
-            string date = DateTime.Today.ToString("ddMMyy");
+            string date = DateTime.Today.ToString("yyyyMMdd");
 
             string baseCacheDirectory = legacyScore
                 ? Path.Join(legacyBaseDirectory, LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId))

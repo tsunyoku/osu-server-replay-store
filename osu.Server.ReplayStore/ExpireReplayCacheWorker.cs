@@ -51,7 +51,7 @@ namespace osu.Server.ReplayStore
         }
 
         private static DateTime getDateFromString(string date)
-            => DateTime.ParseExact(date, "ddMMyy", null).Date;
+            => DateTime.ParseExact(date, "yyyyMMdd", null).Date;
 
         private static IEnumerable<string> getCacheFolders()
         {
