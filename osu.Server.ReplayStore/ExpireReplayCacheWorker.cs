@@ -20,8 +20,7 @@ namespace osu.Server.ReplayStore
             {
                 try
                 {
-                    removeExpiredDirectories(AppSettings.ReplayCacheStoragePath);
-                    removeExpiredDirectories(AppSettings.LegacyReplayCacheStoragePath);
+                    removeExpiredDirectories();
                 }
                 catch (Exception ex)
                 {
@@ -34,9 +33,9 @@ namespace osu.Server.ReplayStore
             }
         }
 
-        private void removeExpiredDirectories(string baseDirectory)
+        private void removeExpiredDirectories()
         {
-            foreach (string cacheFolder in Directory.EnumerateDirectories(baseDirectory))
+            foreach (string cacheFolder in Directory.EnumerateDirectories(AppSettings.ReplayCacheStoragePath))
             {
                 string cacheDate = Path.GetFileName(cacheFolder);
 

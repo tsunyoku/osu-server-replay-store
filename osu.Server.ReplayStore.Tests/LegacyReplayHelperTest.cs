@@ -3,9 +3,11 @@
 
 using osu.Framework.Extensions;
 using osu.Game.Beatmaps;
+using osu.Game.Online.API;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring.Legacy;
 using osu.Game.Tests.Beatmaps;
 using osu.Server.ReplayStore.Helpers;
@@ -24,23 +26,27 @@ namespace osu.Server.ReplayStore.Tests
         {
             using var stream = TestResources.GetResource(legacy_replay_filename)!;
 
-            var highScore = new HighScore
+            var score = new Score
             {
-                score_id = 4501250208,
-                score = 13160096,
-                maxcombo = 724,
-                count50 = 0,
-                count100 = 3,
-                count300 = 525,
-                countmiss = 0,
-                countkatu = 3,
-                countgeki = 105,
-                perfect = true,
-                enabled_mods = 64,
+                id = 1,
+                legacy_score_id = 4501250208,
+                legacy_total_score = 13160096,
+                ScoreData = new SoloScoreData
+                {
+                    Statistics = new Dictionary<HitResult, int>()
+                    {
+                        [HitResult.Great] = 525,
+                        [HitResult.Ok] = 3,
+                        [HitResult.Meh] = 0,
+                        [HitResult.Miss] = 0,
+                    },
+                    Mods = [new APIMod { Acronym = "DT" }]
+                },
+                max_combo = 724,
                 user_id = 11315329,
-                date = new DateTimeOffset(2023, 09, 04, 21, 10, 42, TimeSpan.Zero),
+                ended_at = new DateTimeOffset(2023, 09, 04, 21, 10, 42, TimeSpan.Zero),
                 rank = "S",
-                replay = true,
+                has_replay = true,
             };
 
             var user = new User
@@ -57,23 +63,23 @@ namespace osu.Server.ReplayStore.Tests
                 await stream.ReadAllBytesToArrayAsync(),
                 rulesetId: 0,
                 legacy_replay_version,
-                highScore,
+                score,
                 user,
                 beatmap);
 
             var scoreDecoder = new TestLegacyScoreDecoder();
 
-            var score = scoreDecoder.Parse(response);
+            var decodedScore = scoreDecoder.Parse(response);
 
-            Assert.Equal(user.username, score.ScoreInfo.RealmUser.Username);
-            Assert.Equal(highScore.count300, score.ScoreInfo.GetCount300());
-            Assert.Equal(highScore.count100, score.ScoreInfo.GetCount100());
-            Assert.Equal(highScore.count50, score.ScoreInfo.GetCount50());
-            Assert.Equal(highScore.countmiss, score.ScoreInfo.GetCountMiss());
-            Assert.Equal(highScore.score, score.ScoreInfo.LegacyTotalScore);
-            Assert.Equal(highScore.maxcombo, score.ScoreInfo.MaxCombo);
-            Assert.Equal(highScore.date.DateTime, score.ScoreInfo.Date);
-            Assert.Equal(highScore.score_id, (ulong)score.ScoreInfo.LegacyOnlineID);
+            Assert.Equal(user.username, decodedScore.ScoreInfo.RealmUser.Username);
+            Assert.Equal(score.ScoreData.Statistics[HitResult.Great], decodedScore.ScoreInfo.GetCount300());
+            Assert.Equal(score.ScoreData.Statistics[HitResult.Ok], decodedScore.ScoreInfo.GetCount100());
+            Assert.Equal(score.ScoreData.Statistics[HitResult.Meh], decodedScore.ScoreInfo.GetCount50());
+            Assert.Equal(score.ScoreData.Statistics[HitResult.Miss], decodedScore.ScoreInfo.GetCountMiss());
+            Assert.Equal(score.legacy_total_score, decodedScore.ScoreInfo.LegacyTotalScore);
+            Assert.Equal(score.max_combo, (uint)decodedScore.ScoreInfo.MaxCombo);
+            Assert.Equal(score.ended_at.DateTime, decodedScore.ScoreInfo.Date);
+            Assert.Equal(score.legacy_score_id, (ulong)decodedScore.ScoreInfo.LegacyOnlineID);
         }
     }
 

@@ -26,12 +26,6 @@ namespace osu.Server.ReplayStore.Helpers
             }
         }
 
-        public static string GetLegacyHighScoreTableFromLegacyId(int legacyId)
-        {
-            string tableSuffix = getLegacyTableSuffixFromLegacyId(legacyId);
-            return $"osu_scores{tableSuffix}_high";
-        }
-
         public static string GetLegacyReplayViewCountTableFromLegacyId(int legacyId)
         {
             string tableSuffix = getLegacyTableSuffixFromLegacyId(legacyId);

@@ -20,19 +20,7 @@ namespace osu.Server.ReplayStore
                 transaction: transaction);
         }
 
-        public static Task<HighScore?> GetLegacyScoreAsync(this MySqlConnection db, long legacyScoreId, ushort rulesetId, MySqlTransaction? transaction = null)
-        {
-            string scoresTable = LegacyRulesetHelper.GetLegacyHighScoreTableFromLegacyId(rulesetId);
-
-            return db.QuerySingleOrDefaultAsync<HighScore?>(@$"SELECT * FROM `{scoresTable}` WHERE `score_id` = @legacyScoreId",
-                new
-                {
-                    legacyScoreId = legacyScoreId
-                },
-                transaction: transaction);
-        }
-
-        public static Task<User?> GetUserAsync(this MySqlConnection db, int userId, MySqlTransaction? transaction = null)
+        public static Task<User?> GetUserAsync(this MySqlConnection db, uint userId, MySqlTransaction? transaction = null)
         {
             return db.QuerySingleOrDefaultAsync<User?>(@"SELECT * FROM `phpbb_users` WHERE `user_id` = @userId",
                 new
@@ -42,7 +30,7 @@ namespace osu.Server.ReplayStore
                 transaction: transaction);
         }
 
-        public static Task<OsuBeatmap?> GetBeatmapAsync(this MySqlConnection db, int beatmapId, MySqlTransaction? transaction = null)
+        public static Task<OsuBeatmap?> GetBeatmapAsync(this MySqlConnection db, uint beatmapId, MySqlTransaction? transaction = null)
         {
             return db.QuerySingleOrDefaultAsync<OsuBeatmap?>(@"SELECT * FROM `osu_beatmaps` WHERE `beatmap_id` = @beatmapId",
                 new

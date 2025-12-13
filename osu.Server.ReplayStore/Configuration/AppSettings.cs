@@ -35,11 +35,6 @@ namespace osu.Server.ReplayStore.Configuration
             ?? throw new InvalidOperationException("REPLAY_CACHE_STORAGE_PATH environment variable not set. "
                                                    + "Please set the value of this variable to the path of a directory where cached replays should reside.");
 
-        public static string LegacyReplayCacheStoragePath =>
-            Environment.GetEnvironmentVariable("LEGACY_REPLAY_CACHE_STORAGE_PATH")
-            ?? throw new InvalidOperationException("LEGACY_REPLAY_CACHE_STORAGE_PATH environment variable not set. "
-                                                   + "Please set the value of this variable to the path of a directory where cached legacy replays should reside.");
-
         public static string S3AccessKey =>
             Environment.GetEnvironmentVariable("S3_ACCESS_KEY")
             ?? throw new InvalidOperationException("S3_ACCESS_KEY environment variable not set. "
