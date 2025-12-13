@@ -43,14 +43,14 @@ namespace osu.Server.ReplayStore.Helpers
             writer.Write(beatmap.checksum);
             writer.Write(user.username);
             writer.Write(scoreChecksum.ComputeMD5Hash());
-            writer.Write(score.ScoreData.Statistics[HitResult.Great]);
-            writer.Write(score.ScoreData.Statistics[HitResult.Ok]);
-            writer.Write(score.ScoreData.Statistics[HitResult.Meh]);
-            writer.Write(0); // geki
-            writer.Write(0); // katu
-            writer.Write(score.ScoreData.Statistics[HitResult.Miss]);
-            writer.Write(score.legacy_total_score);
-            writer.Write(score.max_combo);
+            writer.Write((ushort)score.ScoreData.Statistics[HitResult.Great]);
+            writer.Write((ushort)score.ScoreData.Statistics[HitResult.Ok]);
+            writer.Write((ushort)score.ScoreData.Statistics[HitResult.Meh]);
+            writer.Write((ushort)0); // geki
+            writer.Write((ushort)0); // katu
+            writer.Write((ushort)score.ScoreData.Statistics[HitResult.Miss]);
+            writer.Write((int)score.legacy_total_score);
+            writer.Write((ushort)score.max_combo);
             writer.Write(score.max_combo == score.ScoreData.MaximumStatistics.Where(kvp => kvp.Key.AffectsCombo()).Sum(kvp => kvp.Value));
             writer.Write((int)legacyMods);
 
