@@ -18,7 +18,7 @@ namespace osu.Server.ReplayStore.Helpers
     {
         private const int default_replay_version = 20151228;
 
-        private static readonly Dictionary<ushort, Ruleset> rulesets = new Dictionary<ushort, Ruleset>()
+        private static readonly Dictionary<ushort, Ruleset> rulesets = new Dictionary<ushort, Ruleset>
         {
             { 0, new OsuRuleset() },
             { 1, new TaikoRuleset() },
@@ -43,12 +43,12 @@ namespace osu.Server.ReplayStore.Helpers
             writer.Write(beatmap.checksum);
             writer.Write(user.username);
             writer.Write(scoreChecksum.ComputeMD5Hash());
-            writer.Write((ushort)score.ScoreData.Statistics[HitResult.Great]);
-            writer.Write((ushort)score.ScoreData.Statistics[HitResult.Ok]);
-            writer.Write((ushort)score.ScoreData.Statistics[HitResult.Meh]);
-            writer.Write((ushort)0); // geki
-            writer.Write((ushort)0); // katu
-            writer.Write((ushort)score.ScoreData.Statistics[HitResult.Miss]);
+            writer.Write((ushort)score.ScoreData.Statistics.GetValueOrDefault(HitResult.Great));
+            writer.Write((ushort)getCount100(score.ScoreData.Statistics, rulesetId));
+            writer.Write((ushort)score.ScoreData.Statistics.GetValueOrDefault(HitResult.Meh));
+            writer.Write((ushort)getCountGeki(score.ScoreData.Statistics, rulesetId));
+            writer.Write((ushort)getCountKatu(score.ScoreData.Statistics, rulesetId));
+            writer.Write((ushort)score.ScoreData.Statistics.GetValueOrDefault(HitResult.Miss));
             writer.Write((int)score.legacy_total_score);
             writer.Write((ushort)score.max_combo);
             writer.Write(score.max_combo == score.ScoreData.MaximumStatistics.Where(kvp => kvp.Key.AffectsCombo()).Sum(kvp => kvp.Value));
@@ -62,6 +62,34 @@ namespace osu.Server.ReplayStore.Helpers
 
             memoryStream.Seek(0, SeekOrigin.Begin);
             return memoryStream;
+        }
+
+        private static int getCount100(Dictionary<HitResult, int> statistics, ushort rulesetId)
+        {
+            return rulesetId switch
+            {
+                2 => statistics.GetValueOrDefault(HitResult.LargeTickHit),
+                _ => statistics.GetValueOrDefault(HitResult.Ok),
+            };
+        }
+
+        private static int getCountGeki(Dictionary<HitResult, int> statistics, ushort rulesetId)
+        {
+            return rulesetId switch
+            {
+                3 => statistics.GetValueOrDefault(HitResult.Perfect),
+                _ => 0,
+            };
+        }
+
+        private static int getCountKatu(Dictionary<HitResult, int> statistics, ushort rulesetId)
+        {
+            return rulesetId switch
+            {
+                2 => statistics.GetValueOrDefault(HitResult.SmallTickMiss),
+                3 => statistics.GetValueOrDefault(HitResult.Good),
+                _ => 0,
+            };
         }
     }
 }
