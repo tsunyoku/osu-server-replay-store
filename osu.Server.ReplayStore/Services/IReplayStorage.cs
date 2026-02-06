@@ -5,10 +5,10 @@ namespace osu.Server.ReplayStore.Services
 {
     public interface IReplayStorage
     {
-        Task StoreReplayAsync(long scoreId, ushort rulesetId, bool legacyScore, Stream replayData);
+        Task StoreReplayAsync(ulong scoreId, Stream replayData);
 
-        Task<Stream> GetReplayStreamAsync(long scoreId, ushort rulesetId, bool legacyScore);
+        Task<Stream> GetReplayStreamAsync(ulong scoreId);
 
-        Task DeleteReplayAsync(long scoreId, ushort rulesetId, bool legacyScore);
+        Task DeleteReplayAsync(ulong scoreId);
     }
 }

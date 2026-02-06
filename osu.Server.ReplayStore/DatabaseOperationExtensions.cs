@@ -10,7 +10,7 @@ namespace osu.Server.ReplayStore
 {
     public static class DatabaseOperationExtensions
     {
-        public static Task<Score?> GetScoreAsync(this MySqlConnection db, long scoreId, MySqlTransaction? transaction = null)
+        public static Task<Score?> GetScoreAsync(this MySqlConnection db, ulong scoreId, MySqlTransaction? transaction = null)
         {
             return db.QuerySingleOrDefaultAsync<Score?>(@"SELECT * FROM `scores` WHERE `id` = @scoreId",
                 new

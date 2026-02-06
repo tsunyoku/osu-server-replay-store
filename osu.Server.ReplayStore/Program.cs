@@ -77,10 +77,6 @@ namespace osu.Server.ReplayStore
             {
                 case StorageType.Local:
                     builder.Services.AddTransient<IReplayStorage, LocalReplayStorage>();
-
-                    foreach (string ruleset in new[] { "osu", "taiko", "catch", "mania" })
-                        Directory.CreateDirectory(Path.Combine(AppSettings.LocalLegacyReplayStoragePath, ruleset));
-
                     break;
 
                 case StorageType.S3:

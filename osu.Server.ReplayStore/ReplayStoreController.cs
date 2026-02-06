@@ -37,7 +37,7 @@ namespace osu.Server.ReplayStore
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> PutReplayAsync(
-            [FromRoute] long scoreId,
+            [FromRoute] ulong scoreId,
             IFormFile replayFile)
         {
             Score? score;
@@ -50,17 +50,28 @@ namespace osu.Server.ReplayStore
             if (score == null)
                 return NotFound();
 
-            var replayStream = replayFile.OpenReadStream();
+            byte[] replayBytes;
 
-            await replayStorage.StoreReplayAsync(
-                (long?)score.legacy_score_id ?? scoreId,
-                score.ruleset_id,
-                score.IsLegacyScore,
-                replayStream);
+            using (var replayStream = replayFile.OpenReadStream())
+                replayBytes = await replayStream.ReadAllRemainingBytesToArrayAsync();
 
-            replayStream.Seek(0, SeekOrigin.Begin);
+            if (score.IsLegacyScore)
+            {
+                using var db = await DatabaseAccess.GetConnectionAsync();
 
-            await sendReplayToCache(replayStream, score);
+                using var replayStream = await createLegacyReplayWithHeadersAsync(
+                    replayBytes,
+                    score.ruleset_id,
+                    score,
+                    db);
+
+                replayBytes = await replayStream.ReadAllBytesToArrayAsync();
+            }
+
+            using (var replayStream = new MemoryStream(replayBytes))
+                await replayStorage.StoreReplayAsync(scoreId, replayStream);
+
+            await replayCache.AddAsync(score.id, replayBytes);
 
             DogStatsd.Increment("replays_uploaded");
             return NoContent();
@@ -76,7 +87,7 @@ namespace osu.Server.ReplayStore
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
         [Produces(content_type)]
-        public async Task<IActionResult> GetReplayAsync([FromRoute] long scoreId)
+        public async Task<IActionResult> GetReplayAsync([FromRoute] ulong scoreId)
         {
             Score? score;
 
@@ -88,7 +99,7 @@ namespace osu.Server.ReplayStore
             if (score == null || !score.has_replay)
                 return NotFound();
 
-            string fileName = createFileName(scoreId, score.beatmap_id, score.ruleset_id, legacyScore: score.IsLegacyScore);
+            string fileName = createFileName(scoreId, score.beatmap_id, score.ruleset_id);
 
             byte[]? cachedReplay = await replayCache.FindReplayDataAsync(scoreId);
 
@@ -100,7 +111,7 @@ namespace osu.Server.ReplayStore
                 return File(cachedReplay, content_type, fileName);
             }
 
-            var replayStream = await getReplayFromStorage(score);
+            var replayStream = await replayStorage.GetReplayStreamAsync(score.id);
 
             DogStatsd.Increment("replays_downloaded", tags: ["source:storage"]);
 
@@ -114,10 +125,10 @@ namespace osu.Server.ReplayStore
         /// <response code="204">The replay was deleted successfully.</response>
         /// <response code="404">The given score ID could not be found in the database, or the score has no replay.</response>
         [HttpDelete]
-        [Route("{scoreId:long}")]
+        [Route("{scoreId}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
-        public async Task<IActionResult> DeleteReplayAsync([FromRoute] long scoreId)
+        public async Task<IActionResult> DeleteReplayAsync([FromRoute] ulong scoreId)
         {
             Score? score;
 
@@ -129,86 +140,12 @@ namespace osu.Server.ReplayStore
             if (score == null || !score.has_replay)
                 return NotFound();
 
-            await replayStorage.DeleteReplayAsync(
-                (long?)score.legacy_score_id ?? scoreId,
-                score.ruleset_id,
-                score.IsLegacyScore);
-
+            await replayStorage.DeleteReplayAsync(scoreId);
             await replayCache.RemoveAsync(scoreId);
 
             DogStatsd.Increment("replays_deleted");
 
             return NoContent();
-        }
-
-        /// <summary>
-        /// Sends the replay for a given score to the <see cref="IReplayCache"/>.
-        /// </summary>
-        /// <remarks>
-        /// For legacy scores, this will append replay headers to the given stream before storage.
-        /// This ensures all replays stored to the cache contain headers, and can be immediately returned on fetch.
-        /// </remarks>
-        /// <param name="replayStream">The replay stream.</param>
-        /// <param name="score">The score.</param>
-        private async Task sendReplayToCache(Stream replayStream, Score score)
-        {
-            byte[] replayBytes = await replayStream.ReadAllRemainingBytesToArrayAsync();
-
-            await replayStream.DisposeAsync();
-
-            if (score.IsLegacyScore)
-            {
-                Stream replayWithHeadersStream;
-
-                using (var db = await DatabaseAccess.GetConnectionAsync())
-                {
-                    replayWithHeadersStream = await createLegacyReplayWithHeadersAsync(
-                        replayBytes,
-                        score.ruleset_id,
-                        score,
-                        db);
-                }
-
-                replayBytes = await replayWithHeadersStream.ReadAllRemainingBytesToArrayAsync();
-            }
-
-            await replayCache.AddAsync((long)score.id, replayBytes);
-        }
-
-        /// <summary>
-        /// Retrieves the replay for a given score from storage.
-        /// </summary>
-        /// <remarks>
-        /// For legacy scores, this will append headers onto the retrieved replay as legacy scores are stored with only the frame data.
-        /// </remarks>
-        /// <param name="score">The score.</param>
-        /// <returns>The replay.</returns>
-        private async Task<Stream> getReplayFromStorage(Score score)
-        {
-            var replayStream = await replayStorage.GetReplayStreamAsync(
-                (long?)score.legacy_score_id ?? (long)score.id,
-                score.ruleset_id,
-                score.IsLegacyScore);
-
-            byte[] replayBytes = await replayStream.ReadAllRemainingBytesToArrayAsync();
-
-            replayStream.Seek(0, SeekOrigin.Begin);
-
-            if (!score.IsLegacyScore)
-                return replayStream;
-
-            Stream replayWithHeadersStream;
-
-            using (var db = await DatabaseAccess.GetConnectionAsync())
-            {
-                replayWithHeadersStream = await createLegacyReplayWithHeadersAsync(
-                    replayBytes,
-                    score.ruleset_id,
-                    score,
-                    db);
-            }
-
-            return replayWithHeadersStream;
         }
 
         private static async Task<Stream> createLegacyReplayWithHeadersAsync(byte[] frames, ushort rulesetId, Score score, MySqlConnection db)
@@ -232,13 +169,11 @@ namespace osu.Server.ReplayStore
             return replayWithHeaders;
         }
 
-        private static string createFileName(long scoreId, uint beatmapId, ushort rulesetId, bool legacyScore)
+        private static string createFileName(ulong scoreId, uint beatmapId, ushort rulesetId)
         {
             string ruleset = LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId);
 
-            string replayType = legacyScore ? "replay" : "solo-replay";
-
-            return $"{replayType}-{ruleset}_{beatmapId}_{scoreId}.osr";
+            return $"solo-replay-{ruleset}_{beatmapId}_{scoreId}.osr";
         }
     }
 }

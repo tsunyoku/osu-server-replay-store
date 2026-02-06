@@ -5,10 +5,10 @@ namespace osu.Server.ReplayStore.Services
 {
     public interface IReplayCache
     {
-        Task AddAsync(long scoreId, byte[] replayData);
+        Task AddAsync(ulong scoreId, byte[] replayData);
 
-        Task<byte[]?> FindReplayDataAsync(long scoreId);
+        Task<byte[]?> FindReplayDataAsync(ulong scoreId);
 
-        Task RemoveAsync(long scoreId);
+        Task RemoveAsync(ulong scoreId);
     }
 }

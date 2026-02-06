@@ -7,12 +7,9 @@ using osu.Server.ReplayStore.Configuration;
 namespace osu.Server.ReplayStore.Services
 {
     /// <summary>
-    /// Caches replays to local storage based on score type (legacy, solo) and current date.
+    /// Caches replays to local storage based on current date.
     ///
     /// The top-level directory of this cache is the <see cref="AppSettings.ReplayCacheStoragePath"/> folder.
-    /// The first stores lazer replays, the second stores stable replays.
-    /// In the case of the legacy cache folder, replays must be split by ruleset, because stable scores have separate ID schemes per ruleset,
-    /// so there is another hierarchy level inside with a folder per ruleset.
     /// When a replay is added to the cache, it will be put into a folder named by the date it was added in <c>yyyyMMdd</c> format.
     /// <see cref="ExpireReplayCacheWorker"/> is a worker that will purge these folders as they get too old, depending on <see cref="AppSettings.ReplayCacheDays"/>.
     /// </summary>
@@ -33,14 +30,14 @@ namespace osu.Server.ReplayStore.Services
             baseDirectory = directory ?? AppSettings.ReplayCacheStoragePath;
         }
 
-        public Task AddAsync(long scoreId, byte[] replayData)
+        public Task AddAsync(ulong scoreId, byte[] replayData)
         {
             return File.WriteAllBytesAsync(
                 getPathToReplay(scoreId),
                 replayData);
         }
 
-        public async Task<byte[]?> FindReplayDataAsync(long scoreId)
+        public async Task<byte[]?> FindReplayDataAsync(ulong scoreId)
         {
             foreach (string cacheDirectory in Directory.EnumerateDirectories(baseDirectory))
             {
@@ -53,7 +50,7 @@ namespace osu.Server.ReplayStore.Services
             return null;
         }
 
-        public Task RemoveAsync(long scoreId)
+        public Task RemoveAsync(ulong scoreId)
         {
             foreach (string cacheDirectory in Directory.EnumerateDirectories(baseDirectory))
             {
@@ -81,7 +78,7 @@ namespace osu.Server.ReplayStore.Services
             return datedDirectory;
         }
 
-        private string getPathToReplay(long scoreId) =>
+        private string getPathToReplay(ulong scoreId) =>
             Path.Combine(getReplayDirectory(), scoreId.ToString(CultureInfo.InvariantCulture));
     }
 }

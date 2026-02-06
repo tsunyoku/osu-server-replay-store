@@ -37,10 +37,6 @@ namespace osu.Server.ReplayStore.Tests
             db.Execute("TRUNCATE TABLE `phpbb_users`");
             db.Execute("TRUNCATE TABLE `osu_beatmaps`");
             db.Execute("TRUNCATE TABLE `scores`");
-            db.Execute("TRUNCATE TABLE `osu_scores_high`");
-            db.Execute("TRUNCATE TABLE `osu_scores_taiko_high`");
-            db.Execute("TRUNCATE TABLE `osu_scores_fruits_high`");
-            db.Execute("TRUNCATE TABLE `osu_scores_mania_high`");
             db.Execute("TRUNCATE TABLE `osu_replays`");
             db.Execute("TRUNCATE TABLE `osu_replays_taiko`");
             db.Execute("TRUNCATE TABLE `osu_replays_fruits`");

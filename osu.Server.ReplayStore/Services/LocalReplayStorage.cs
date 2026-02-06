@@ -3,32 +3,29 @@
 
 using System.Globalization;
 using osu.Server.ReplayStore.Configuration;
-using osu.Server.ReplayStore.Helpers;
 
 namespace osu.Server.ReplayStore.Services
 {
     public class LocalReplayStorage : IReplayStorage
     {
         private readonly string baseDirectory;
-        private readonly string legacyBaseDirectory;
 
-        public LocalReplayStorage(string? directory = null, string? legacyDirectory = null)
+        public LocalReplayStorage(string? directory = null)
         {
             baseDirectory = directory ?? AppSettings.LocalReplayStoragePath;
-            legacyBaseDirectory = legacyDirectory ?? AppSettings.LocalLegacyReplayStoragePath;
         }
 
-        public async Task StoreReplayAsync(long scoreId, ushort rulesetId, bool legacyScore, Stream replayData)
+        public async Task StoreReplayAsync(ulong scoreId, Stream replayData)
         {
-            string path = getPathToReplay(scoreId, rulesetId, legacyScore);
+            string path = getPathToReplay(scoreId);
 
             using var fileStream = File.OpenWrite(path);
             await replayData.CopyToAsync(fileStream);
         }
 
-        public async Task<Stream> GetReplayStreamAsync(long scoreId, ushort rulesetId, bool legacyScore)
+        public async Task<Stream> GetReplayStreamAsync(ulong scoreId)
         {
-            string path = getPathToReplay(scoreId, rulesetId, legacyScore);
+            string path = getPathToReplay(scoreId);
 
             var memoryStream = new MemoryStream();
 
@@ -39,20 +36,15 @@ namespace osu.Server.ReplayStore.Services
             return memoryStream;
         }
 
-        public Task DeleteReplayAsync(long scoreId, ushort rulesetId, bool legacyScore)
+        public Task DeleteReplayAsync(ulong scoreId)
         {
-            string path = getPathToReplay(scoreId, rulesetId, legacyScore);
+            string path = getPathToReplay(scoreId);
 
             File.Delete(path);
             return Task.CompletedTask;
         }
 
-        private string getReplayDirectory(ushort rulesetId, bool legacyScore) =>
-            legacyScore
-                ? Path.Combine(legacyBaseDirectory, LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId))
-                : baseDirectory;
-
-        private string getPathToReplay(long scoreId, ushort rulesetId, bool legacyScore) =>
-            Path.Combine(getReplayDirectory(rulesetId, legacyScore), scoreId.ToString(CultureInfo.InvariantCulture));
+        private string getPathToReplay(ulong scoreId) =>
+            Path.Combine(baseDirectory, scoreId.ToString(CultureInfo.InvariantCulture));
     }
 }

@@ -7,7 +7,6 @@ using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
 using osu.Server.ReplayStore.Configuration;
-using osu.Server.ReplayStore.Helpers;
 
 namespace osu.Server.ReplayStore.Services
 {
@@ -33,19 +32,17 @@ namespace osu.Server.ReplayStore.Services
                 });
         }
 
-        public async Task StoreReplayAsync(long scoreId, ushort rulesetId, bool legacyScore, Stream replayData)
+        public async Task StoreReplayAsync(ulong scoreId, Stream replayData)
         {
             logger.LogInformation(
-                "Uploading replay for score {ScoreId} (ruleset: {RulesetId}, legacy: {LegacyScore})",
-                scoreId,
-                rulesetId,
-                legacyScore);
+                "Uploading replay for score {ScoreId}",
+                scoreId);
 
             long length = replayData.Length;
 
             await s3Client.PutObjectAsync(new PutObjectRequest
             {
-                BucketName = legacyScore ? getLegacyBucket(rulesetId) : AppSettings.S3ReplaysBucketName,
+                BucketName = AppSettings.S3ReplaysBucketName,
                 Key = getPathToReplay(scoreId),
                 Headers =
                 {
@@ -55,14 +52,14 @@ namespace osu.Server.ReplayStore.Services
             });
         }
 
-        public async Task<Stream> GetReplayStreamAsync(long scoreId, ushort rulesetId, bool legacyScore)
+        public async Task<Stream> GetReplayStreamAsync(ulong scoreId)
         {
             var memoryStream = new MemoryStream();
 
             logger.LogInformation("Retrieving replay for score {ScoreId}", scoreId);
 
             using var response = await s3Client.GetObjectAsync(
-                legacyScore ? getLegacyBucket(rulesetId) : AppSettings.S3ReplaysBucketName,
+                AppSettings.S3ReplaysBucketName,
                 getPathToReplay(scoreId));
 
             await response.ResponseStream.CopyToAsync(memoryStream);
@@ -71,18 +68,15 @@ namespace osu.Server.ReplayStore.Services
             return memoryStream;
         }
 
-        public async Task DeleteReplayAsync(long scoreId, ushort rulesetId, bool legacyScore)
+        public async Task DeleteReplayAsync(ulong scoreId)
         {
             logger.LogInformation("Deleting replay for score {ScoreId}", scoreId);
 
             await s3Client.DeleteObjectAsync(
-                legacyScore ? getLegacyBucket(rulesetId) : AppSettings.S3ReplaysBucketName,
+                AppSettings.S3ReplaysBucketName,
                 getPathToReplay(scoreId));
         }
 
-        private static string getLegacyBucket(ushort rulesetId) =>
-            string.Format(AppSettings.S3LegacyReplaysBucketName, LegacyRulesetHelper.GetRulesetNameFromLegacyId(rulesetId));
-
-        private static string getPathToReplay(long scoreId) => scoreId.ToString(CultureInfo.InvariantCulture);
+        private static string getPathToReplay(ulong scoreId) => scoreId.ToString(CultureInfo.InvariantCulture);
     }
 }

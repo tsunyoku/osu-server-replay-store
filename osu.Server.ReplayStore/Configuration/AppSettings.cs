@@ -25,11 +25,6 @@ namespace osu.Server.ReplayStore.Configuration
             ?? throw new InvalidOperationException("LOCAL_REPLAY_STORAGE_PATH environment variable not set. "
                                                    + "Please set the value of this variable to the path of a directory where the replays should reside.");
 
-        public static string LocalLegacyReplayStoragePath =>
-            Environment.GetEnvironmentVariable("LOCAL_LEGACY_REPLAY_STORAGE_PATH")
-            ?? throw new InvalidOperationException("LOCAL_LEGACY_REPLAY_STORAGE_PATH environment variable not set. "
-                                                   + "Please set the value of this variable to the path of a directory where the legacy replays should reside.");
-
         public static string ReplayCacheStoragePath =>
             Environment.GetEnvironmentVariable("REPLAY_CACHE_STORAGE_PATH")
             ?? throw new InvalidOperationException("REPLAY_CACHE_STORAGE_PATH environment variable not set. "
@@ -49,11 +44,6 @@ namespace osu.Server.ReplayStore.Configuration
             Environment.GetEnvironmentVariable("S3_REPLAYS_BUCKET_NAME")
             ?? throw new InvalidOperationException("S3_REPLAYS_BUCKET_NAME environment variable not set. "
                                                    + "Please set the value of this variable to the name of the bucket to be used for storing replays on S3.");
-
-        public static string S3LegacyReplaysBucketName =>
-            Environment.GetEnvironmentVariable("S3_LEGACY_REPLAYS_BUCKET_NAME")
-            ?? throw new InvalidOperationException("S3_LEGACY_REPLAYS_BUCKET_NAME environment variable not set. "
-                                                   + "Please set the value of this variable to the name of the bucket to be used for storing legacy replays on S3.");
 
         public static string S3ReplaysBucketRegion =>
             Environment.GetEnvironmentVariable("S3_REPLAYS_BUCKET_REGION")
