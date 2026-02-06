@@ -33,7 +33,7 @@ namespace osu.Server.ReplayStore.Tests
                 legacy_total_score = 13160096,
                 ScoreData = new SoloScoreData
                 {
-                    Statistics = new Dictionary<HitResult, int>()
+                    Statistics = new Dictionary<HitResult, int>
                     {
                         [HitResult.Great] = 525,
                         [HitResult.Ok] = 3,
